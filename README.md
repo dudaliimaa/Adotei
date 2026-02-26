@@ -4,22 +4,7 @@ O **Adotei** é uma plataforma desenvolvida para centralizar e facilitar o proce
 
 ---
 
-## Estrutura do Repositório
-
-O repositório segue o padrão de GitFlow simplificado e está organizado da seguinte forma:
-
-* **`/backend`**: Código-fonte do servidor e integração com banco de dados.
-* **`/frontend`**: Interface do usuário (Web/Mobile).
-* **`/docs`**: Documentação técnica contendo:
-    * Levantamento de Requisitos.
-    * Modelo de Dados (DER).
-    * Arquitetura e Stack Tecnológica.
-    * Protótipos (Figma).
-    * Design de API.
-
----
-
-## Itens do Projeto (Roteiro)
+## Itens do Projeto
 
 1.  **Levantamento de Requisitos:** Definição de funcionalidades e perfis de acesso.
 2.  **Modelo de Dados:** Diagrama Entidade-Relacionamento e escolha do SGBD.
