@@ -2,8 +2,6 @@
 
 O **Adotei** é uma aplicação pensada para facilitar a **adoção e doação responsável de animais**, conectando pessoas interessadas em adotar com **ONGs, protetores independentes e pessoas da comunidade**.
 
----
-
 ## Objetivo
 
 O sistema tem como objetivo:
@@ -14,13 +12,9 @@ O sistema tem como objetivo:
 - Ajudar ONGs e protetores a gerenciar seus animais
 - Reduzir o abandono de animais
 
----
-
 ## Problema que o sistema resolve
 
 O **App Adotei** surge como uma solução **simples, moderna e acessível**, permitindo que qualquer pessoa ou ONG consiga cadastrar animais para adoção de forma rápida.
-
----
 
 ## Público-alvo
 
@@ -28,8 +22,6 @@ O **App Adotei** surge como uma solução **simples, moderna e acessível**, per
 - ONGs de proteção animal
 - Protetores independentes
 - Pessoas que desejam doar animais
-
----
 
 ## Funcionalidades principais
 
@@ -54,8 +46,6 @@ O **App Adotei** surge como uma solução **simples, moderna e acessível**, per
 - Descrição
 - Status de adoção
 
----
-
 ## Tecnologias Utilizadas (planejadas)
 
 - **Frontend Mobile:** React Native
@@ -63,14 +53,10 @@ O **App Adotei** surge como uma solução **simples, moderna e acessível**, per
 - **Banco de Dados:** MySQL
 - **Controle de versão:** Git + GitHub
 
----
-
 ## Autores
 
 * **Eduarda Lima**
 * **Nathalia Cappellini**
 * **Vitor Lopes**
-
----
 
 Este projeto é para fins acadêmicos - Fatec 2026.
