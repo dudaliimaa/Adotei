@@ -1,24 +1,117 @@
+// Tipo Timestamp do Firestore — representa datas/horas no banco
 import { Timestamp } from 'firebase/firestore';
 
-// ─── Enums / Union Types ───────────────────────────────────────────────────────
+// ─── Usuário ──────────────────────────────────────────────────────────────────
 
-export type PetSpecies = 'dog' | 'cat';
-export type PetSex = 'male' | 'female';
-export type PetSize = 'small' | 'medium' | 'large';
-export type FurLength = 'short' | 'medium' | 'long' | 'none';
-export type PetStatus = 'available' | 'pending' | 'adopted';
+// Endereço residencial do usuário (usado também como fallback de localização)
+export interface UserAddress {
+  street: string;
+  number: string;
+  complement?: string;   // Campo opcional
+  neighborhood: string;
+  city: string;
+  state: string;         // Sigla do estado: "SP", "RJ", etc.
+  zipCode: string;       // Apenas dígitos, sem traço: "01310100"
+}
+
+// Perfil completo do usuário salvo na coleção "users" do Firestore
+export interface User {
+  uid: string;           // ID gerado pelo Firebase Auth — também é o ID do documento
+  fullName: string;
+  email: string;
+  cpf: string;           // Armazenado criptografado com AES-256 (nunca em texto puro)
+  phone: string;         // Apenas dígitos, com DDD: "11987654321"
+  address: UserAddress;
+  createdAt: Timestamp;  // Gerado pelo servidor no momento do cadastro
+  updatedAt: Timestamp;  // Atualizado a cada modificação do perfil
+}
+
+// Dados enviados pelo formulário de cadastro (inclui senha — não vai para o Firestore)
+export interface RegisterFormData {
+  fullName: string;
+  email: string;
+  password: string; // Gerenciada exclusivamente pelo Firebase Auth
+  cpf: string;
+  phone: string;
+  address: UserAddress;
+}
+
+// ─── Pet ──────────────────────────────────────────────────────────────────────
+
+// Tipos enumerados dos atributos do pet
+export type PetSpecies  = 'dog' | 'cat';
+export type PetSex      = 'male' | 'female';
+export type PetSize     = 'small' | 'medium' | 'large';
+export type FurLength   = 'short' | 'medium' | 'long' | 'none';
+
+// Status do pet no fluxo de adoção
+export type PetStatus   = 'available' | 'pending' | 'adopted';
+
+// Localização do ponto de encontro para entrega do pet
+// Pode ser diferente do endereço pessoal do doador (regra de negócio RN07)
+export interface MeetingLocation {
+  street: string;
+  number: string;
+  complement?: string;
+  neighborhood: string;
+  city: string;
+  state: string;
+  zipCode: string;
+  formattedAddress: string; // Montado automaticamente: "Rua das Flores, 142, Vila Madalena, São Paulo, SP"
+}
+
+// Documento completo do pet na coleção "pets" do Firestore
+export interface Pet {
+  id: string;                    // ID gerado automaticamente pelo Firestore
+  ownerId: string;               // UID do doador — referência para users/{uid}
+  name: string;
+  species: PetSpecies;
+  ageMonths: number;             // Idade em meses (ex.: 18 = 1 ano e 6 meses)
+  sex: PetSex;
+  size: PetSize;
+  furColor: string | null;       // null quando o animal não tem pelos
+  furLength: FurLength;
+  eyeColor: string;
+  neutered: boolean;
+  description: string;
+  photoUrl: string;              // URL pública da foto no Firebase Storage
+  meetingLocation: MeetingLocation;
+  status: PetStatus;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+}
+
+// ─── Adoção ───────────────────────────────────────────────────────────────────
+
+// Status do pedido de adoção na máquina de estados
 export type AdoptionStatus = 'pending' | 'confirmed' | 'rejected';
 
-// ─── Const arrays (úteis para iterar em formulários e filtros) ────────────────
+// Documento de pedido de adoção na coleção "adoptions"
+export interface Adoption {
+  id: string;                       // ID gerado automaticamente pelo Firestore
+  petId: string;                    // Referência para pets/{id}
+  adopterId: string;                // UID de quem quer adotar — ref: users/{uid}
+  donorId: string;                  // UID do dono do pet — ref: users/{uid}
+  status: AdoptionStatus;
+  emailSent: boolean;               // Controle anti-reenvio do e-mail de confirmação
+  requestedAt: Timestamp;           // Data em que o pedido foi criado
+  resolvedAt: Timestamp | null;     // Data da confirmação ou recusa; null enquanto pendente
+}
 
-export const SPECIES = ['dog', 'cat'] as const;
-export const SEX = ['male', 'female'] as const;
-export const SIZE = ['small', 'medium', 'large'] as const;
-export const FUR_LEN = ['short', 'medium', 'long', 'none'] as const;
-export const PET_STATUS = ['available', 'pending', 'adopted'] as const;
-export const ADOPT_STATUS = ['pending', 'confirmed', 'rejected'] as const;
+// ─── E-mail ───────────────────────────────────────────────────────────────────
 
-// ─── Labels em português para exibição na UI ──────────────────────────────────
+// Documento escrito na coleção "mail" para disparar o Firebase Trigger Email
+export interface MailDocument {
+  to: string[];          // Lista de destinatários: [adotante, doador]
+  message: {
+    subject: string;     // Assunto do e-mail
+    html: string;        // Corpo em HTML — gerado por generateAdoptionDocument()
+  };
+}
+
+// ─── Labels em português para exibição na UI ─────────────────────────────────
+
+// Mapeia os valores internos (inglês) para os rótulos exibidos ao usuário (pt-BR)
 
 export const SPECIES_LABEL: Record<PetSpecies, string> = {
   dog: 'Cão',
@@ -54,130 +147,3 @@ export const ADOPT_STATUS_LABEL: Record<AdoptionStatus, string> = {
   confirmed: 'Confirmado',
   rejected: 'Recusado',
 };
-
-// ─── Interfaces: User ─────────────────────────────────────────────────────────
-
-export interface UserAddress {
-  street: string;
-  number: string;
-  complement?: string;
-  neighborhood: string;
-  city: string;
-  state: string;    // Sigla: "SP", "RJ", etc.
-  zipCode: string;  // Apenas dígitos: "01310100"
-}
-
-export interface User {
-  uid: string;
-  fullName: string;
-  email: string;
-  cpf: string;      // Armazenado criptografado (AES-256)
-  phone: string;    // Apenas dígitos: "11987654321"
-  address: UserAddress;
-  createdAt: Timestamp;
-  updatedAt: Timestamp;
-}
-
-// ─── Interfaces: Pet ──────────────────────────────────────────────────────────
-
-export interface MeetingLocation {
-  street: string;
-  number: string;
-  complement?: string;
-  neighborhood: string;
-  city: string;
-  state: string;
-  zipCode: string;
-  formattedAddress: string; // Ex: "Rua das Flores, 142, Vila Madalena, São Paulo, SP"
-}
-
-export interface Pet {
-  id: string;
-  ownerId: string;
-  name: string;
-  species: PetSpecies;
-  ageMonths: number;
-  sex: PetSex;
-  size: PetSize;
-  furColor: string | null;
-  furLength: FurLength;
-  eyeColor: string;
-  neutered: boolean;
-  description: string;
-  photoUrl: string;
-  meetingLocation: MeetingLocation;
-  status: PetStatus;
-  createdAt: Timestamp;
-  updatedAt: Timestamp;
-}
-
-// ─── Interfaces: Adoption ─────────────────────────────────────────────────────
-
-export interface Adoption {
-  id: string;
-  petId: string;
-  adopterId: string;
-  donorId: string;
-  status: AdoptionStatus;
-  emailSent: boolean;
-  requestedAt: Timestamp;
-  resolvedAt: Timestamp | null;
-}
-
-// ─── Interfaces: Mail (Firebase Trigger Email) ────────────────────────────────
-
-export interface MailDocument {
-  to: string[];
-  message: {
-    subject: string;
-    html: string;
-  };
-}
-
-// ─── Tipos auxiliares para formulários ───────────────────────────────────────
-
-/** Dados do formulário de cadastro de usuário (sem uid/timestamps) */
-export type RegisterFormData = Omit<User, 'uid' | 'cpf' | 'createdAt' | 'updatedAt'> & {
-  password: string;
-  cpf: string; // CPF em texto puro — será criptografado antes de salvar
-};
-
-/** Dados do formulário de cadastro de pet (sem id/ownerId/photoUrl/status/timestamps) */
-export type CreatePetData = Omit<Pet, 'id' | 'ownerId' | 'photoUrl' | 'status' | 'createdAt' | 'updatedAt'>;
-
-/** Filtros disponíveis no catálogo (RF05) */
-export interface PetFilters {
-  species?: PetSpecies;
-  sex?: PetSex;
-  size?: PetSize;
-  furColor?: string;
-  furLength?: FurLength;
-  eyeColor?: string;
-  neutered?: boolean;
-  city?: string;
-  neighborhood?: string;
-}
-
-// ─── Utilitário: formata idade para exibição na UI ───────────────────────────
-
-export function formatAge(ageMonths: number): string {
-  if (ageMonths < 12) {
-    return `${ageMonths} ${ageMonths === 1 ? 'mês' : 'meses'}`;
-  }
-  const years = Math.floor(ageMonths / 12);
-  return `${years} ${years === 1 ? 'ano' : 'anos'}`;
-}
-
-// ─── Utilitário: monta formattedAddress ──────────────────────────────────────
-
-export function buildFormattedAddress(loc: Omit<MeetingLocation, 'formattedAddress'>): string {
-  const parts = [
-    loc.street,
-    loc.number,
-    loc.complement,
-    loc.neighborhood,
-    loc.city,
-    loc.state,
-  ].filter(Boolean);
-  return parts.join(', ');
-}

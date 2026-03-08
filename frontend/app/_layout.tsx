@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { onAuthStateChanged } from 'firebase/auth'; 
-import { auth } from '../src/config/firebase';
+import { auth } from '@/src/config/firebase';
 
 export default function RootLayout() {
   const router = useRouter(); //permite navegar entre telas via código
