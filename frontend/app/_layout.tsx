@@ -1,57 +1,23 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { useFonts } from 'expo-font';
-import { Stack } from 'expo-router';
-import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
-import 'react-native-reanimated';
-
-import { useColorScheme } from '@/components/useColorScheme';
-
-export {
-  // Catch any errors thrown by the Layout component.
-  ErrorBoundary,
-} from 'expo-router';
-
-export const unstable_settings = {
-  // Ensure that reloading on `/modal` keeps a back button present.
-  initialRouteName: '(tabs)',
-};
-
-// Prevent the splash screen from auto-hiding before asset loading is complete.
-SplashScreen.preventAutoHideAsync();
+import { Stack, useRouter, useSegments } from 'expo-router';
+import { onAuthStateChanged } from 'firebase/auth'; 
+import { auth } from '@/src/config/firebase';
 
 export default function RootLayout() {
-  const [loaded, error] = useFonts({
-    SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
-  });
-
-  // Expo Router uses Error Boundaries to catch errors in the navigation tree.
-  useEffect(() => {
-    if (error) throw error;
-  }, [error]);
+  const router = useRouter(); //permite navegar entre telas via código
+  const segments = useSegments(); //retorna em qual parte do app o usuário está
 
   useEffect(() => {
-    if (loaded) {
-      SplashScreen.hideAsync();
-    }
-  }, [loaded]);
+    const unsubscribe = onAuthStateChanged(auth, (user) => { //função do Firebase que fica escutando se o usuário está logado ou não
+      const inAuthGroup = segments[0] === '(auth)';
+      if (!user && !inAuthGroup) { //Caso não tem usuário logado E não está nas telas de auth
+        router.replace('/(auth)/login'); //redireciona para o login
+      } else if (user && inAuthGroup) { //se tem usuário logado E ainda está nas telas de auth
+        router.replace('/(tabs)/catalog'); //redireciona para o catálogo
+      }
+    });
+    return unsubscribe; //quando o componente é desmontado, ele para de escutar o Firebase para não causar vazamento de memória
+  }, [segments]);
 
-  if (!loaded) {
-    return null;
-  }
-
-  return <RootLayoutNav />;
-}
-
-function RootLayoutNav() {
-  const colorScheme = useColorScheme();
-
-  return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
-      </Stack>
-    </ThemeProvider>
-  );
+  return <Stack screenOptions={{ headerShown: false }} />;
 }
