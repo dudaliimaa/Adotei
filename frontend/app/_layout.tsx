@@ -1,23 +1,48 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { Stack, useRouter, useSegments } from 'expo-router';
-import { onAuthStateChanged } from 'firebase/auth'; 
-import { auth } from '@/src/config/firebase';
+import { useAuthStore } from '@/src/stores/auth.store';
 
 export default function RootLayout() {
-  const router = useRouter(); //permite navegar entre telas via código
-  const segments = useSegments(); //retorna em qual parte do app o usuário está
+  const router = useRouter();
+  const segments = useSegments();
 
+  // Lê o estado de autenticação diretamente do store Zustand
+  // O store é a fonte única de verdade — não usamos onAuthStateChanged aqui
+  const firebaseUser = useAuthStore((state) => state.firebaseUser);
+  const isLoading = useAuthStore((state) => state.isLoading);
+  const initialise = useAuthStore((state) => state.initialise);
+
+  // Ref para evitar que segments entre como dependência do useEffect de redirecionamento
+  const segmentsRef = useRef(segments);
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => { //função do Firebase que fica escutando se o usuário está logado ou não
-      const inAuthGroup = segments[0] === '(auth)';
-      if (!user && !inAuthGroup) { //Caso não tem usuário logado E não está nas telas de auth
-        router.replace('/(auth)/login'); //redireciona para o login
-      } else if (user && inAuthGroup) { //se tem usuário logado E ainda está nas telas de auth
-        router.replace('/(tabs)/catalog'); //redireciona para o catálogo
-      }
-    });
-    return unsubscribe; //quando o componente é desmontado, ele para de escutar o Firebase para não causar vazamento de memória
+    segmentsRef.current = segments;
   }, [segments]);
+
+  // Inicializa o listener do Firebase UMA vez ao montar o layout raiz
+  // O store passa a ouvir login/logout e atualiza firebaseUser e userProfile
+  useEffect(() => {
+    const unsubscribe = initialise(); // registra o onAuthStateChanged interno do store
+    return unsubscribe;              // cancela o listener ao desmontar (evita memory leak)
+  }, []);
+
+  // Reage às mudanças de firebaseUser vindas do store para redirecionar o usuário
+  useEffect(() => {
+    if (isLoading) return; // aguarda o Firebase resolver o estado inicial antes de redirecionar
+
+    const inAuthGroup = segmentsRef.current[0] === '(auth)';
+
+    if (!firebaseUser && !inAuthGroup) {
+      // Sem sessão e fora da área de auth → vai para o login
+      router.replace('/(auth)/login');
+    } else if (firebaseUser && inAuthGroup) {
+      // Com sessão e ainda na área de auth → só redireciona se estiver no login
+      // Se estiver em /register, deixa ficar para permitir novo cadastro
+      const inLoginScreen = segmentsRef.current[1] === 'login';
+      if (inLoginScreen) {
+        router.replace('/(tabs)/catalog');
+      }
+    }
+  }, [firebaseUser, isLoading]); // roda sempre que o estado de auth ou loading mudar
 
   return <Stack screenOptions={{ headerShown: false }} />;
 }

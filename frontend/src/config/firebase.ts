@@ -41,3 +41,5 @@ export const db = getFirestore(app);
 
 // Instância do Storage — usada em storage.service.ts para upload de fotos
 export const storage = getStorage(app);
+
+console.log("API KEY:", process.env.EXPO_PUBLIC_FIREBASE_API_KEY);
