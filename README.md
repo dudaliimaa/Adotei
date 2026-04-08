@@ -1,6 +1,6 @@
 # 🐾 Adotei
 
-O **Adotei** é um aplicativo mobile criado para **facilitar a adoção responsável de animais**, conectando pessoas interessadas em adotar com **doadores, ONGs e protetores independentes**.
+O **Adotei** é um aplicativo mobile criado para **facilitar a adoção responsável de animais**, conectando pessoas interessadas em adotar com **doadores**.
 
 A proposta do projeto é centralizar o processo de adoção em uma plataforma simples e segura, permitindo que animais disponíveis ganhem visibilidade e encontrem novos lares com mais facilidade.
 
