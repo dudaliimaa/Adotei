@@ -87,7 +87,6 @@ Projeto desenvolvido por:
 
 - **Eduarda Lima**  
 - **Nathalia Cappellini**  
-- **Vitor Lopes**  
-- **Mateus Pinheiro**  
+- **Vitor Lopes**   
 
 Curso: **Análise e Desenvolvimento de Sistemas — FATEC Praia Grande**
