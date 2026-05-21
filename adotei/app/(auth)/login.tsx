@@ -1,177 +1,87 @@
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  ActivityIndicator,
-  StyleSheet,
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
-} from 'react-native';
-import { useForm, Controller } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
+import React from 'react';
+import { StyleSheet, View, Text, TextInput, TouchableOpacity, SafeAreaView, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useForm, Controller } from 'react-hook-form';
+import { Ionicons } from '@expo/vector-icons';
 import { loginUser } from '../../src/services/auth.service';
 
-// Schema de validação do formulário de login
-const loginSchema = z.object({
-  email: z.string().email('E-mail inválido'),
-  password: z.string().min(1, 'Senha obrigatória'),
-});
-
-type LoginFormValues = z.infer<typeof loginSchema>;
-
-// Tela de login — autentica o usuário com e-mail e senha via Firebase Auth
 export default function LoginScreen() {
   const router = useRouter();
-  const [loading, setLoading] = useState(false);
-
-  const {
-    control,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<LoginFormValues>({
-    resolver: zodResolver(loginSchema),
+  const { control, handleSubmit, formState: { isSubmitting } } = useForm({
+    defaultValues: { email: '', password: '' }
   });
 
-  // Submete o login e trata os possíveis erros do Firebase Auth
-  async function onSubmit(data: LoginFormValues) {
-    setLoading(true);
+  const onSubmit = async (data: any) => {
     try {
       await loginUser(data.email, data.password);
-      // Após login bem-sucedido, redireciona para o catálogo
-      router.replace('/(tabs)/catalog');
-    } catch (error: unknown) {
-      // Trata erros específicos do Firebase Auth (credenciais inválidas)
-      const code = (error as { code?: string }).code;
-      if (code === 'auth/invalid-credential' || code === 'auth/user-not-found' || code === 'auth/wrong-password') {
-        Alert.alert('Erro', 'E-mail ou senha incorretos.');
-      } else {
-        Alert.alert('Erro', 'Não foi possível entrar. Tente novamente.');
-      }
-    } finally {
-      setLoading(false);
+    } catch (error) {
+      alert('Erro ao entrar. Verifique suas credenciais.');
     }
-  }
+  };
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
-      <Text style={styles.title}>Adotei</Text>
-      <Text style={styles.subtitle}>Entrar na sua conta</Text>
+    <SafeAreaView style={styles.container}>
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        <View style={styles.card}>
+          <Text style={styles.title}>Entre com sua conta ou pelas redes sociais</Text>
+          <Text style={styles.subtitle}>Conecte-se para gerenciar adoções e acompanhar atualizações!</Text>
 
-      {/* Campo de e-mail */}
-      <View style={{ marginBottom: 12 }}>
-        <Text style={styles.label}>E-mail</Text>
-        <Controller
-          control={control}
-          name="email"
-          render={({ field: { onChange, value } }) => (
-            <TextInput
-              style={styles.input}
-              onChangeText={onChange}
-              value={value}
-              placeholder="seu@email.com"
-              keyboardType="email-address"
-              autoCapitalize="none"
-            />
-          )}
-        />
-        {errors.email ? <Text style={styles.error}>{errors.email.message}</Text> : null}
-      </View>
+          <View style={styles.socialRow}>
+            <TouchableOpacity style={styles.socialIcon}><Ionicons name="logo-facebook" size={24} color="#1877F2" /></TouchableOpacity>
+            <TouchableOpacity style={styles.socialIcon}><Ionicons name="logo-google" size={24} color="#DB4437" /></TouchableOpacity>
+            <TouchableOpacity style={styles.socialIcon}><Ionicons name="logo-apple" size={24} color="#000" /></TouchableOpacity>
+          </View>
 
-      {/* Campo de senha */}
-      <View style={{ marginBottom: 24 }}>
-        <Text style={styles.label}>Senha</Text>
-        <Controller
-          control={control}
-          name="password"
-          render={({ field: { onChange, value } }) => (
-            <TextInput
-              style={styles.input}
-              onChangeText={onChange}
-              value={value}
-              placeholder="Sua senha"
-              secureTextEntry
-            />
-          )}
-        />
-        {errors.password ? <Text style={styles.error}>{errors.password.message}</Text> : null}
-      </View>
+          <Controller
+            control={control}
+            name="email"
+            render={({ field: { onChange, value } }) => (
+              <TextInput style={styles.input} placeholder="E-mail / CPF / CNPJ" value={value} onChangeText={onChange} autoCapitalize="none" />
+            )}
+          />
+          <Controller
+            control={control}
+            name="password"
+            render={({ field: { onChange, value } }) => (
+              <TextInput style={styles.input} placeholder="Senha" value={value} onChangeText={onChange} secureTextEntry />
+            )}
+          />
 
-      {/* Botão de login com loading */}
-      <TouchableOpacity style={styles.button} onPress={handleSubmit(onSubmit)} disabled={loading}>
-        {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Entrar</Text>}
-      </TouchableOpacity>
+          <TouchableOpacity style={styles.forgotPass}>
+            <Text style={styles.forgotText}>Esqueceu a senha? Clique aqui</Text>
+          </TouchableOpacity>
 
-      {/* Link para tela de cadastro */}
-      <TouchableOpacity onPress={() => router.push('/(auth)/register')} style={styles.link}>
-        <Text style={styles.linkText}>Não tem conta? Cadastre-se</Text>
-      </TouchableOpacity>
-    </KeyboardAvoidingView>
+          <TouchableOpacity style={styles.mainButton} onPress={handleSubmit(onSubmit)} disabled={isSubmitting}>
+            <Text style={styles.mainButtonText}>{isSubmitting ? 'Entrando...' : 'Entrar'}</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={[styles.card, styles.bottomCard]}>
+          <Text style={styles.title}>Não tem uma conta?</Text>
+          <Text style={styles.subtitle}>Cadastre-se agora e ajude a transformar vidas!</Text>
+          <TouchableOpacity style={styles.outlineButton} onPress={() => router.push('/(auth)/register')}>
+            <Text style={styles.outlineButtonText}>Cadastrar</Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    padding: 24,
-    backgroundColor: '#fff',
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#E87722',
-    marginBottom: 4,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#666',
-    marginBottom: 32,
-  },
-  label: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: '#555',
-    marginBottom: 4,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 15,
-    backgroundColor: '#fafafa',
-  },
-  error: {
-    color: '#e53e3e',
-    fontSize: 12,
-    marginTop: 4,
-  },
-  button: {
-    backgroundColor: '#E87722',
-    borderRadius: 8,
-    paddingVertical: 14,
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  link: {
-    alignItems: 'center',
-  },
-  linkText: {
-    color: '#E87722',
-    fontSize: 14,
-  },
+  container: { flex: 1, backgroundColor: '#FDFBF7' },
+  scrollContent: { padding: 20, gap: 20 },
+  card: { backgroundColor: '#FFF', borderRadius: 25, padding: 25, borderWidth: 1, borderColor: '#8DC4A6', alignItems: 'center' },
+  bottomCard: { backgroundColor: '#D9EDE2', borderWidth: 0, borderColor: 'transparent' },
+  title: { fontSize: 22, fontWeight: 'bold', color: '#2D3748', textAlign: 'center', marginBottom: 10 },
+  subtitle: { fontSize: 14, color: '#718096', textAlign: 'center', marginBottom: 20 },
+  socialRow: { flexDirection: 'row', gap: 20, marginBottom: 25 },
+  socialIcon: { width: 50, height: 50, borderRadius: 25, borderWidth: 1, borderColor: '#E2E8F0', justifyContent: 'center', alignItems: 'center' },
+  input: { width: '100%', backgroundColor: '#FFF', borderWidth: 1, borderColor: '#CBD5E0', borderRadius: 12, padding: 15, marginBottom: 15, fontSize: 16 },
+  forgotPass: { alignSelf: 'center', marginBottom: 25 },
+  forgotText: { color: '#718096', fontSize: 14 },
+  mainButton: { backgroundColor: '#8DC4A6', width: '100%', padding: 18, borderRadius: 15, alignItems: 'center' },
+  mainButtonText: { color: '#FFF', fontWeight: 'bold', fontSize: 18 },
+  outlineButton: { width: '100%', padding: 15, borderRadius: 15, borderWidth: 1, borderColor: '#8DC4A6', backgroundColor: '#FFF', alignItems: 'center', marginTop: 10 },
+  outlineButtonText: { color: '#8DC4A6', fontWeight: 'bold', fontSize: 16 }
 });
