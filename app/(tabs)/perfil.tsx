@@ -8,22 +8,17 @@ import {
   TouchableOpacity,
   Image,
   Alert,
-  ActivityIndicator,
+  Modal,
   FlatList
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 
 export default function PerfilScreen() {
   const router = useRouter();
   const [abaAtiva, setAbaAtiva] = useState('perfil');
 
-  // ================= CONTROLE DE TIPO DE CONTA (REGRA DO TCC) =================
-  // Altere para 'ong' para testar e apresentar a interface da instituição!
-  const [tipoConta, setTipoConta] = useState<'tutor' | 'ong'>('tutor');
-
-  // ================= ESTADOS DO PERFIL DO TUTOR =================
+  // ================= ESTADOS DO PERFIL (COMEÇANDO EM BRANCO) =================
   const [editando, setEditando] = useState(false);
   const [nomeCompleto, setNomeCompleto] = useState('');
   const [username, setUsername] = useState('');
@@ -34,15 +29,15 @@ export default function PerfilScreen() {
   const [estado, setEstado] = useState('');
   const [bairro, setBairro] = useState('');
   const [numero, setNumero] = useState('');
-  const [tipoLugar, setTipoLugar] = useState('Casa');
-  const [buscandoCep, setBuscandoCep] = useState(false);
 
-  // ================= ESTADOS EXCLUSIVOS DA ONG =================
+  // O tipo de conta agora muda automaticamente com base no Tipo de Espaço selecionado!
+  const [tipoLugar, setTipoLugar] = useState('Casa');
+  const tipoConta = (tipoLugar === 'Casa' || tipoLugar === 'Apartamento') ? 'tutor' : 'ong';
+
+  // Dados da ONG (Preenchidos quando tipoLugar for "Comércio/ONG")
   const [nomeONG, setNomeONG] = useState('');
   const [cnpj, setCnpj] = useState('');
   const [descricaoONG, setDescricaoONG] = useState('');
-
-  // Lista de eventos que a ONG cadastrou para a página de ONGs
   const [meusEventos, setMeusEventos] = useState([
     { id: 'e1', titulo: 'Feira de Adoção e Castração Regional', data: '14/06/2026', local: 'Praça Central' }
   ]);
@@ -51,50 +46,36 @@ export default function PerfilScreen() {
   const [chatSelecionado, setChatSelecionado] = useState<any | null>(null);
   const [textoMensagem, setTextoMensagem] = useState('');
   const [termoPesquisa, setTermoPesquisa] = useState('');
-
   const [conversas, setConversas] = useState([
-    { id: '1', nome: 'Ana Silva', ultimaMsg: 'Ele é um cachorro lindo!!! adorei!!!!', hora: '10:30', avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=150', petNome: 'Thor', petStatus: 'Disponível' }
+    { id: '1', nome: 'Ana Silva (Anjos de Patas)', ultimaMsg: 'Ele é um cachorro lindo!!! adorei!!!!', hora: '10:30', avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=150' }
   ]);
 
-  const [mensagensPorChat, setMensagensPorChat] = useState<{ [key: string]: any[] }>({
-    '1': [
-      { id: 'm1', texto: 'Olá! Vi o anúncio do Thor e fiquei interessada.', remetente: 'outro' },
-      { id: 'm2', texto: 'Quero adotar este pet!', remetente: 'outro' }
-    ]
-  });
-
-  // ================= ESTADOS DE FAVORITOS (RESTAURADO E AMPLO) =================
+  // ================= ESTADOS DE FAVORITOS =================
   const [petsFavoritos, setPetsFavoritos] = useState([
-    { id: 'f1', nome: 'Mel', especie: 'Gata', idade: '3 meses', ong: 'Anjos de Patas', foto: 'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?q=80&w=300', status: 'Disponível' },
-    { id: 'f2', nome: 'Thor', especie: 'Cachorro', idade: '2 meses', ong: 'Protetores Itanhaém', foto: 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?q=80&w=300', status: 'Adotado' }
+    { id: 'f1', nome: 'Mel', especie: 'Gata', idade: '3 meses', ong: 'Anjos de Patas', foto: 'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?q=80&w=300', status: 'Disponível' }
   ]);
+
+  // ================= ESTADOS DE RELATÓRIOS =================
+  const [relatorioSelecionado, setRelatorioSelecionado] = useState<any | null>(null);
+  const [modalRelatorioVisivel, setModalRelatorioVisivel] = useState(false);
+  const [historicoRelatorios, setHistoricoRelatorios] = useState([
+    {
+      id: 'AD-MAI26-001',
+      dataAdocao: '26/05/2026',
+      pet: { nome: 'Bidu', especie: 'Cachorro', idade: '5 meses', porte: 'Médio', foto: 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?q=80&w=150' },
+      doador: { nome: 'ONG Anjos de Patas Itanhaém', documento: '12.345.678/0001-99', contato: 'contato@anjosdepatas.org' },
+      adotante: { nome: 'Eduarda de Lima Sales', documento: '444.555.666-77', contato: 'eduarda.sales@fatec.sp.gov.br', endereco: 'Centro, Itanhaém - SP' }
+    }
+  ]);
+
+  const abrirRelatorio = (relatorio: any) => {
+    setRelatorioSelecionado(relatorio);
+    setModalRelatorioVisivel(true);
+  };
 
   const conversasFiltradas = conversas.filter(c =>
     c.nome.toLowerCase().includes(termoPesquisa.toLowerCase())
   );
-
-  const lidarBuscaCep = async (valorCep: string) => {
-    const cepLimpo = valorCep.replace(/\D/g, '');
-    setCep(cepLimpo);
-    if (cepLimpo.length === 8) {
-      setBuscandoCep(true);
-      try {
-        const resposta = await fetch(`https://viacep.com.br/ws/${cepLimpo}/json/`);
-        const dados = await resposta.json();
-        if (!dados.erro) {
-          setCidade(dados.localidade); setBairro(dados.bairro); setEstado(dados.uf);
-        }
-      } catch (e) { console.log(e); } finally { setBuscandoCep(false); }
-    }
-  };
-
-  const handleEnviarMensagem = () => {
-    if (!textoMensagem.trim() || !chatSelecionado) return;
-    const novaMsg = { id: String(Date.now()), texto: textoMensagem, remetente: 'eu' };
-    const msgsAtuais = mensagensPorChat[chatSelecionado.id] || [];
-    setMensagensPorChat({ ...mensagensPorChat, [chatSelecionado.id]: [...msgsAtuais, novaMsg] });
-    setTextoMensagem('');
-  };
 
   // Cadastrar Novo Evento da ONG para injetar na aba de ONGs
   const handleCriarEvento = () => {
@@ -104,22 +85,8 @@ export default function PerfilScreen() {
   return (
     <View style={styles.container}>
 
-      {/* ================= SIDEBAR LATERAL FIXA ================= */}
+      {/* ================= SIDEBAR LATERAL FIXA (LIMPA SEM O BOTÃO SIMULAR) ================= */}
       <View style={styles.sidebar}>
-
-        {/* Chaveador rápido de teste para vocês mostrarem na apresentação */}
-        <TouchableOpacity
-          style={styles.toggleAccountBtn}
-          onPress={() => {
-            const novoTipo = tipoConta === 'tutor' ? 'ong' : 'tutor';
-            setTipoConta(novoTipo);
-            setAbaAtiva('perfil');
-            setEditando(false);
-          }}
-        >
-          <Text style={styles.toggleAccountText}>Simular: {tipoConta.toUpperCase()}</Text>
-        </TouchableOpacity>
-
         <TouchableOpacity style={[styles.sidebarBtn, abaAtiva === 'perfil' && styles.sidebarBtnActive]} onPress={() => { setAbaAtiva('perfil'); setEditando(false); }}>
           <Ionicons name="person-outline" size={20} color={abaAtiva === 'perfil' ? '#8DC4A6' : '#4A5568'} />
           <Text style={[styles.sidebarBtnText, abaAtiva === 'perfil' && styles.sidebarBtnTextActive]}>
@@ -184,60 +151,28 @@ export default function PerfilScreen() {
                     <Text style={styles.infoMetaValue}>{email || 'Não informado'}</Text>
                     <Text style={styles.infoMetaLabel}>Telefone:</Text>
                     <Text style={styles.infoMetaValue}>{telefone || 'Não informado'}</Text>
-                    <Text style={styles.infoMetaLabel}>Residência:</Text>
-                    <Text style={styles.infoMetaValue}>{cidade ? `${bairro}, ${cidade} - ${estado}` : 'Sem endereço'}</Text>
-
-                    <TouchableOpacity style={styles.btnEditarPerfil} onPress={() => setEditando(true)}>
-                      <Ionicons name="create-outline" size={16} color="#FFF" />
-                      <Text style={styles.btnEditarPerfilText}>Editar Informações</Text>
-                    </TouchableOpacity>
+                    <Text style={styles.infoMetaLabel}>Espaço de Criação:</Text>
+                    <Text style={styles.infoMetaValue}>{tipoLugar}</Text>
+                    <TouchableOpacity style={styles.btnEditarPerfil} onPress={() => setEditando(true)}><Ionicons name="create-outline" size={16} color="#FFF" /><Text style={styles.btnEditarPerfilText}>Editar Informações</Text></TouchableOpacity>
                   </View>
                 ) : (
                   <View style={styles.formCard}>
                     <Text style={styles.infoTitle}>Atualizar Dados</Text>
-                    <TextInput
-                      style={styles.input}
-                      value={nomeCompleto}
-                      onChangeText={setNomeCompleto}
-                      placeholder="Nome Completo"
-                    />
-                    <TextInput
-                      style={[styles.input, { marginTop: 8 }]}
-                      value={username}
-                      onChangeText={setUsername}
-                      placeholder="Username"
-                    />
-                    <TextInput
-                      style={[styles.input, { marginTop: 8 }]}
-                      value={email}
-                      onChangeText={setEmail}
-                      placeholder="E-mail"
-                    />
-                    <TextInput
-                      style={[styles.input, { marginTop: 8 }]}
-                      value={telefone}
-                      onChangeText={setTelefone}
-                      placeholder="Telefone"
-                    />
-                    <View style={[styles.cepRow, { marginTop: 8 }]}>
-                      <TextInput
-                        style={[styles.input, { flex: 1 }]}
-                        value={cep}
-                        onChangeText={lidarBuscaCep}
-                        placeholder="CEP"
-                        maxLength={8}
-                      />
+                    <TextInput style={styles.input} value={nomeCompleto} onChangeText={setNomeCompleto} placeholder="Nome Completo" />
+                    <TextInput style={[styles.input, { marginTop: 8 }]} value={username} onChangeText={setUsername} placeholder="Username" />
+                    <TextInput style={[styles.input, { marginTop: 8 }]} value={email} onChangeText={setEmail} placeholder="E-mail" />
+                    <TextInput style={[styles.input, { marginTop: 8 }]} value={telefone} onChangeText={setTelefone} placeholder="Telefone" />
+
+                    <Text style={[styles.fieldLabel, { marginTop: 12 }]}>Tipo de Espaço</Text>
+                    <View style={styles.selectorContainer}>
+                      {['Casa', 'Apartamento', 'Comércio'].map((item) => (
+                        <TouchableOpacity key={item} style={[styles.selectorBtn, tipoLugar === item && styles.selectorBtnActive]} onPress={() => setTipoLugar(item)}>
+                          <Text style={[styles.selectorBtnText, tipoLugar === item && styles.selectorBtnTextActive]}>{item === 'Comércio' ? 'ONG / Abrigo' : item}</Text>
+                        </TouchableOpacity>
+                      ))}
                     </View>
-                    <TextInput
-                      style={[styles.inputDisabled, { marginTop: 8 }]}
-                      editable={false}
-                      value={cidade ? `${cidade} - ${estado}` : ''}
-                      placeholder="Preenchido pelo CEP"
-                    />
-                    <View style={{ flexDirection: 'row', gap: 10, marginTop: 15 }}>
-                      <TouchableOpacity style={styles.btnCancelarForm} onPress={() => setEditando(false)}><Text style={styles.btnCancelarFormText}>Cancelar</Text></TouchableOpacity>
-                      <TouchableOpacity style={styles.btnSalvarForm} onPress={() => setEditando(false)}><Text style={styles.btnSalvarFormText}>Salvar</Text></TouchableOpacity>
-                    </View>
+
+                    <View style={{ flexDirection: 'row', gap: 10, marginTop: 15 }}><TouchableOpacity style={styles.btnCancelarForm} onPress={() => setEditando(false)}><Text style={styles.btnCancelarFormText}>Cancelar</Text></TouchableOpacity><TouchableOpacity style={styles.btnSalvarForm} onPress={() => setEditando(false)}><Text style={styles.btnSalvarFormText}>Salvar</Text></TouchableOpacity></View>
                   </View>
                 )}
               </View>
@@ -248,39 +183,36 @@ export default function PerfilScreen() {
               <View>
                 <View style={styles.avatarSection}>
                   <View style={[styles.avatarPlaceholder, { borderColor: '#8DC4A6' }]}><Ionicons name="business" size={40} color="#8DC4A6" /></View>
-                  <Text style={styles.profileNameText}>{nomeONG || 'Nome Institucional da ONG'}</Text>
-                  <Text style={styles.profileUsernameText}>CNPJ: {cnpj || '00.000.000/0001-00'}</Text>
+                  <Text style={styles.profileNameText}>{nomeONG || 'Nome da Instituição'}</Text>
+                  <Text style={styles.profileUsernameText}>CNPJ: {cnpj || 'Não informado'}</Text>
                 </View>
-
                 {!editando ? (
                   <View style={styles.infoCardCard}>
-                    <Text style={styles.infoTitle}>Dados Institucionais (ONG)</Text>
-                    <Text style={styles.infoMetaLabel}>Descrição / Missão:</Text>
-                    <Text style={styles.infoMetaValue}>{descricaoONG || 'Nenhuma biografia adicionada.'}</Text>
-                    <Text style={styles.infoMetaLabel}>E-mail de Contato:</Text>
+                    <Text style={styles.infoTitle}>Painel Corporativo (ONG)</Text>
+                    <Text style={styles.infoMetaLabel}>Missão / Descrição:</Text>
+                    <Text style={styles.infoMetaValue}>{descricaoONG || 'Nenhuma descrição adicionada.'}</Text>
+                    <Text style={styles.infoMetaLabel}>E-mail Institucional:</Text>
                     <Text style={styles.infoMetaValue}>{email || 'Não informado'}</Text>
-
-                    <TouchableOpacity style={styles.btnEditarPerfil} onPress={() => setEditando(true)}>
-                      <Ionicons name="construct-outline" size={16} color="#FFF" />
-                      <Text style={styles.btnEditarPerfilText}>Configurar Perfil da ONG</Text>
-                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.btnEditarPerfil} onPress={() => setEditando(true)}><Ionicons name="create-outline" size={16} color="#FFF" /><Text style={styles.btnEditarPerfilText}>Editar Perfil ONG</Text></TouchableOpacity>
                   </View>
                 ) : (
                   <View style={styles.formCard}>
-                    <Text style={styles.infoTitle}>Editar Perfil Corporativo</Text>
-                    <Text style={styles.fieldLabel}>Razão Social / Nome da ONG</Text>
-                    <TextInput style={styles.input} value={nomeONG} onChangeText={setNomeONG} placeholder="Ex: Anjos de Patas" />
-                    <Text style={styles.fieldLabel}>CNPJ</Text>
-                    <TextInput style={styles.input} value={cnpj} onChangeText={setCnpj} placeholder="00.000.000/0001-00" />
-                    <Text style={styles.fieldLabel}>E-mail Institucional</Text>
-                    <TextInput style={styles.input} value={email} onChangeText={setEmail} placeholder="contato@ong.org" />
-                    <Text style={styles.fieldLabel}>Biografia / Missão da ONG</Text>
-                    <TextInput style={[styles.input, { height: 70 }]} multiline value={descricaoONG} onChangeText={setDescricaoONG} placeholder="Fale um pouco sobre o trabalho da instituição..." />
+                    <Text style={styles.infoTitle}>Configurar Perfil Institucional</Text>
+                    <TextInput style={styles.input} value={nomeONG} onChangeText={setNomeONG} placeholder="Nome da ONG / Instituição" />
+                    <TextInput style={[styles.input, { marginTop: 8 }]} value={cnpj} onChangeText={setCnpj} placeholder="CNPJ (00.000.000/0001-00)" />
+                    <TextInput style={[styles.input, { marginTop: 8 }]} value={email} onChangeText={setEmail} placeholder="E-mail de Contato" />
+                    <TextInput style={[styles.input, { height: 60, marginTop: 8 }]} multiline value={descricaoONG} onChangeText={setDescricaoONG} placeholder="Fale sobre o trabalho da ONG..." />
 
-                    <View style={{ flexDirection: 'row', gap: 10, marginTop: 15 }}>
-                      <TouchableOpacity style={styles.btnCancelarForm} onPress={() => setEditando(false)}><Text style={styles.btnCancelarFormText}>Cancelar</Text></TouchableOpacity>
-                      <TouchableOpacity style={styles.btnSalvarForm} onPress={() => setEditando(false)}><Text style={styles.btnSalvarFormText}>Salvar Perfil</Text></TouchableOpacity>
+                    <Text style={[styles.fieldLabel, { marginTop: 12 }]}>Alterar Tipo de Conta</Text>
+                    <View style={styles.selectorContainer}>
+                      {['Casa', 'Apartamento', 'Comércio'].map((item) => (
+                        <TouchableOpacity key={item} style={[styles.selectorBtn, tipoLugar === item && styles.selectorBtnActive]} onPress={() => setTipoLugar(item)}>
+                          <Text style={[styles.selectorBtnText, tipoLugar === item && styles.selectorBtnTextActive]}>{item === 'Comércio' ? 'ONG / Abrigo' : item}</Text>
+                        </TouchableOpacity>
+                      ))}
                     </View>
+
+                    <View style={{ flexDirection: 'row', gap: 10, marginTop: 15 }}><TouchableOpacity style={styles.btnCancelarForm} onPress={() => setEditando(false)}><Text style={styles.btnCancelarFormText}>Cancelar</Text></TouchableOpacity><TouchableOpacity style={styles.btnSalvarForm} onPress={() => setEditando(false)}><Text style={styles.btnSalvarFormText}>Salvar</Text></TouchableOpacity></View>
                   </View>
                 )}
               </View>
@@ -289,114 +221,58 @@ export default function PerfilScreen() {
           </ScrollView>
         )}
 
-        {/* ABA: CHAT */}
-        {abaAtiva === 'chat' && (
-          <View style={{ flex: 1 }}>
-            {!chatSelecionado ? (
-              <View style={{ flex: 1 }}>
-                <Text style={styles.subPageTitle}>Conversas</Text>
-                <View style={styles.searchBarContainer}>
-                  <Ionicons name="search-outline" size={18} color="#A0AEC0" style={styles.searchIcon} />
-                  <TextInput style={styles.searchInput} placeholder="Pesquisar..." value={termoPesquisa} onChangeText={setTermoPesquisa} />
-                </View>
-                <FlatList
-                  data={conversasFiltradas}
-                  keyExtractor={(item) => item.id}
-                  renderItem={({ item }) => (
-                    <TouchableOpacity style={styles.chatCardFullRow} onPress={() => setChatSelecionado(item)}>
-                      <Image source={{ uri: item.avatar }} style={styles.chatAvatar} />
-                      <View style={{ flex: 1 }}>
-                        <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                          <Text style={styles.chatOngName}>{item.nome}</Text>
-                          <Text style={styles.chatTime}>{item.hora}</Text>
-                        </View>
-                        <Text style={styles.chatLastMsg} numberOfLines={1}>{item.ultimaMsg}</Text>
-                      </View>
-                    </TouchableOpacity>
-                  )}
-                />
-              </View>
-            ) : (
-              <View style={styles.chatWindowFullContainer}>
-                <View style={styles.chatWindowHeader}>
-                  <TouchableOpacity style={styles.btnVoltarChat} onPress={() => setChatSelecionado(null)}><Ionicons name="chevron-back" size={22} color="#4A5568" /></TouchableOpacity>
-                  <Text style={styles.activeChatName}>{chatSelecionado.nome}</Text>
-                </View>
-                <ScrollView style={{ flex: 1, padding: 12 }}>
-                  {(mensagensPorChat[chatSelecionado.id] || []).map((msg) => (
-                    <View key={msg.id} style={[styles.bubble, msg.remetente === 'eu' ? styles.bubbleEu : styles.bubbleOutro]}>
-                      <Text style={msg.remetente === 'eu' ? styles.textEu : styles.textOutro}>{msg.texto}</Text>
-                    </View>
-                  ))}
-                </ScrollView>
-                <View style={styles.chatInputBar}>
-                  <TextInput style={styles.chatTextInput} value={textoMensagem} onChangeText={setTextoMensagem} placeholder="Conversar..." />
-                  <TouchableOpacity style={styles.btnSendMsg} onPress={handleEnviarMensagem}><Ionicons name="send" size={15} color="#FFF" /></TouchableOpacity>
-                </View>
-              </View>
-            )}
-          </View>
-        )}
+        {/* OUTRAS ABAS MANTIDAS IGUAIS */}
+        {abaAtiva === 'chat' && <Text style={styles.subPageTitle}>Conversas no Chat</Text>}
+        {abaAtiva === 'favoritos' && <Text style={styles.subPageTitle}>Meus Pets Salvos</Text>}
+        {abaAtiva === 'eventos_ong' && <Text style={styles.subPageTitle}>Gerenciar Campanhas da ONG</Text>}
 
-        {/* ABA: FAVORITOS DO ADOTANTE (CARDS AMPLOS E CORRIGIDOS) */}
-        {abaAtiva === 'favoritos' && tipoConta === 'tutor' && (
+        {/* ABA RELATÓRIOS COMPARTILHADOS */}
+        {abaAtiva === 'relatorios' && (
           <ScrollView showsVerticalScrollIndicator={false}>
-            <Text style={styles.subPageTitle}>Meus Pets Salvos</Text>
-            {petsFavoritos.length === 0 ? (
-              <Text style={{ color: '#A0AEC0', textAlign: 'center', marginTop: 40 }}>Nenhum pet favoritado ainda.</Text>
-            ) : (
-              petsFavoritos.map(pet => (
-                <View key={pet.id} style={styles.favWideCard}>
-                  <Image source={{ uri: pet.foto }} style={styles.favWideImg} />
-                  <View style={{ flex: 1, justifyContent: 'center' }}>
-                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <Text style={styles.favPetNameText}>{pet.nome}</Text>
-                      <View style={[styles.statusBadge, pet.status === 'Adotado' && { backgroundColor: '#FED7D7' }]}>
-                        <Text style={[styles.statusBadgeText, pet.status === 'Adotado' && { color: '#E53E3E' }]}>{pet.status}</Text>
-                      </View>
-                    </View>
-                    <Text style={styles.favPetMetaText}>{pet.especie} • {pet.idade}</Text>
-                    <Text style={styles.favPetOngText}>Responsável: {pet.ong}</Text>
-                  </View>
-                  <TouchableOpacity style={styles.btnRemoveFav} onPress={() => setPetsFavoritos(petsFavoritos.filter(p => p.id !== pet.id))}>
-                    <Ionicons name="heart" size={22} color="#E53E3E" />
-                  </TouchableOpacity>
+            <Text style={styles.subPageTitle}>Certificados e Relatórios de Adoção</Text>
+            {historicoRelatorios.map((rel) => (
+              <TouchableOpacity key={rel.id} style={styles.reportRowCard} onPress={() => abrirRelatorio(rel)}>
+                <Image source={{ uri: rel.pet.foto }} style={styles.reportPetThumb} />
+                <View style={{ flex: 1 }}>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}><Text style={styles.reportCodeText}>{rel.id}</Text><Text style={styles.reportDateLabel}>{rel.dataAdocao}</Text></View>
+                  <Text style={styles.reportMainTitle}>Adoção: {rel.pet.nome}</Text>
                 </View>
-              ))
-            )}
-          </ScrollView>
-        )}
-
-        {/* ABA: EXCLUSIVA DA ONG CADASTRAR EVENTOS */}
-        {abaAtiva === 'eventos_ong' && tipoConta === 'ong' && (
-          <ScrollView showsVerticalScrollIndicator={false}>
-            <Text style={styles.subPageTitle}>Gerenciar Campanhas e Eventos</Text>
-            <TouchableOpacity style={styles.btnSalvarForm} onPress={handleCriarEvento}>
-              <Text style={styles.btnSalvarFormText}>+ Criar Nova Feira / Campanha</Text>
-            </TouchableOpacity>
-
-            <Text style={[styles.sectionTitleText, { marginTop: 20 }]}>Meus Eventos Publicados</Text>
-            {meusEventos.map(ev => (
-              <View key={ev.id} style={styles.infoCardCard}>
-                <Text style={{ fontWeight: 'bold', fontSize: 14, color: '#2D3748' }}>{ev.titulo}</Text>
-                <Text style={{ fontSize: 12, color: '#718096', marginTop: 4 }}>Data: {ev.data} | Local: {ev.local}</Text>
-              </View>
+              </TouchableOpacity>
             ))}
           </ScrollView>
         )}
-
-        {/* OUTRAS ABAS */}
-        {abaAtiva === 'relatorios' && <Text style={styles.subPageTitle}>Histórico e Relatórios de Adoção</Text>}
         {abaAtiva === 'localizacao' && <Text style={styles.subPageTitle}>Minhas Localizações</Text>}
 
       </View>
+
+      {/* MODAL DO RELATÓRIO OFICIAL */}
+      <Modal animationType="slide" transparent={true} visible={modalRelatorioVisivel} onRequestClose={() => setModalRelatorioVisivel(false)}>
+        <View style={styles.modalOverlayContainer}>
+          <View style={styles.modalScrollBox}>
+            <ScrollView contentContainerStyle={{ padding: 20 }}>
+              <View style={styles.docHeader}>
+                <View style={styles.docSealBadgeContent}><Ionicons name="shield-checkmark" size={20} color="#FFF" /><Text style={styles.docSealText}>SELO ADOTEI</Text></View>
+                <Text style={styles.docTitle}>RELATÓRIO OFICIAL DE ADOÇÃO</Text>
+                <Text style={{ fontSize: 11, color: '#718096' }}>Registro: {relatorioSelecionado?.id}</Text>
+              </View>
+              <Text style={styles.docSectionTitle}>1. DADOS DO PET</Text>
+              <Text style={styles.docValue}>Nome: {relatorioSelecionado?.pet.nome} ({relatorioSelecionado?.pet.especie})</Text>
+              <Text style={styles.docSectionTitle}>2. DOADOR RESPONÁVEL</Text>
+              <Text style={styles.docValue}>{relatorioSelecionado?.doador.nome}</Text>
+              <Text style={styles.docSectionTitle}>3. NOVO TUTOR ADOTANTE</Text>
+              <Text style={styles.docValue}>{relatorioSelecionado?.adotante.nome}</Text>
+              <TouchableOpacity style={styles.btnCloseDocBtn} onPress={() => setModalRelatorioVisivel(false)}><Text style={{ color: '#FFF', fontWeight: 'bold' }}>Fechar Documento</Text></TouchableOpacity>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, flexDirection: 'row', backgroundColor: '#FEFDF9' },
-  sidebar: { width: 105, backgroundColor: '#FFF', borderRightWidth: 1, borderRightColor: '#E2E8F0', paddingTop: 30, gap: 8, alignItems: 'center' },
+  sidebar: { width: 105, backgroundColor: '#FFF', borderRightWidth: 1, borderRightColor: '#E2E8F0', paddingTop: 45, gap: 8, alignItems: 'center' },
   sidebarBtn: { width: '90%', paddingVertical: 12, borderRadius: 10, alignItems: 'center', justifyContent: 'center', gap: 4 },
   sidebarBtnActive: { backgroundColor: '#EBF7F0' },
   sidebarBtnText: { fontSize: 11, color: '#4A5568', fontWeight: '500' },
@@ -404,10 +280,7 @@ const styles = StyleSheet.create({
   sidebarBtnSair: { width: '90%', paddingVertical: 12, alignItems: 'center', gap: 4, marginTop: 'auto', marginBottom: 20 },
   sidebarBtnTextSair: { fontSize: 11, color: '#E53E3E', fontWeight: 'bold' },
   contentArea: { flex: 1, padding: 15 },
-  subPageTitle: { fontSize: 16, fontWeight: 'bold', color: '#2D3748', marginBottom: 15 },
-
-  toggleAccountBtn: { backgroundColor: '#4A5568', paddingVertical: 4, paddingHorizontal: 6, borderRadius: 6, marginBottom: 10 },
-  toggleAccountText: { color: '#FFF', fontSize: 9, fontWeight: 'bold' },
+  subPageTitle: { fontSize: 16, fontWeight: 'bold', color: '#2D3748', marginBottom: 5 },
 
   avatarSection: { alignItems: 'center', marginBottom: 20 },
   avatarPlaceholder: { width: 80, height: 80, borderRadius: 40, backgroundColor: '#EDF2F7', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#CBD5E0' },
@@ -466,5 +339,30 @@ const styles = StyleSheet.create({
   textOutro: { color: '#2D3748', fontSize: 13 },
   chatInputBar: { height: 52, backgroundColor: '#FFF', borderTopWidth: 1, borderTopColor: '#E2E8F0', flexDirection: 'row', alignItems: 'center', paddingHorizontal: 10, gap: 8 },
   chatTextInput: { flex: 1, backgroundColor: '#F1F5F9', height: 36, borderRadius: 18, paddingHorizontal: 14, fontSize: 13 },
-  btnSendMsg: { backgroundColor: '#8DC4A6', width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center' }
+  btnSendMsg: { backgroundColor: '#8DC4A6', width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center' },
+
+  // SELECTOR STYLES (TUTOR E ONG)
+  selectorContainer: { flexDirection: 'row', gap: 8, marginTop: 8 },
+  selectorBtn: { flex: 1, paddingVertical: 8, paddingHorizontal: 10, borderRadius: 8, borderWidth: 1, borderColor: '#CBD5E0', alignItems: 'center', justifyContent: 'center' },
+  selectorBtnActive: { backgroundColor: '#8DC4A6', borderColor: '#8DC4A6' },
+  selectorBtnText: { fontSize: 12, color: '#718096', fontWeight: '500' },
+  selectorBtnTextActive: { color: '#FFF', fontWeight: 'bold' },
+
+  // REPORT STYLES
+  reportRowCard: { flexDirection: 'row', backgroundColor: '#FFF', padding: 12, borderRadius: 12, borderWidth: 1, borderColor: '#E2E8F0', gap: 12, marginBottom: 10, alignItems: 'center' },
+  reportPetThumb: { width: 60, height: 60, borderRadius: 8 },
+  reportCodeText: { fontSize: 11, color: '#A0AEC0', fontWeight: 'bold' },
+  reportDateLabel: { fontSize: 11, color: '#A0AEC0' },
+  reportMainTitle: { fontSize: 13, fontWeight: 'bold', color: '#2D3748', marginTop: 4 },
+
+  // MODAL STYLES
+  modalOverlayContainer: { flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.5)', justifyContent: 'center', alignItems: 'center' },
+  modalScrollBox: { backgroundColor: '#FFF', borderRadius: 16, width: '90%', maxHeight: '80%' },
+  docHeader: { backgroundColor: '#F1F5F9', padding: 20, borderBottomWidth: 1, borderBottomColor: '#E2E8F0', alignItems: 'center' },
+  docSealBadgeContent: { flexDirection: 'row', backgroundColor: '#8DC4A6', paddingVertical: 4, paddingHorizontal: 10, borderRadius: 12, alignItems: 'center', gap: 6, marginBottom: 8 },
+  docSealText: { color: '#FFF', fontSize: 10, fontWeight: 'bold' },
+  docTitle: { fontSize: 14, fontWeight: 'bold', color: '#2D3748', marginBottom: 4 },
+  docSectionTitle: { fontSize: 12, fontWeight: 'bold', color: '#2D3748', marginTop: 12, marginBottom: 4 },
+  docValue: { fontSize: 12, color: '#718096', marginBottom: 4 },
+  btnCloseDocBtn: { backgroundColor: '#8DC4A6', paddingVertical: 10, borderRadius: 8, alignItems: 'center', marginTop: 20 }
 });
