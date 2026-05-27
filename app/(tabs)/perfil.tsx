@@ -195,14 +195,45 @@ export default function PerfilScreen() {
                 ) : (
                   <View style={styles.formCard}>
                     <Text style={styles.infoTitle}>Atualizar Dados</Text>
-                    <TextInput style={styles.input} value={nomeCompleto} onChangeText={setNomeCompleto} placeholder="Nome Completo" />
-                    <TextInput style={styles.input} value={username} onChangeText={setUsername} placeholder="Username" style={{ marginTop: 8 }} />
-                    <TextInput style={styles.input} value={email} onChangeText={setEmail} placeholder="E-mail" style={{ marginTop: 8 }} />
-                    <TextInput style={styles.input} value={telefone} onChangeText={setTelefone} placeholder="Telefone" style={{ marginTop: 8 }} />
+                    <TextInput
+                      style={styles.input}
+                      value={nomeCompleto}
+                      onChangeText={setNomeCompleto}
+                      placeholder="Nome Completo"
+                    />
+                    <TextInput
+                      style={[styles.input, { marginTop: 8 }]}
+                      value={username}
+                      onChangeText={setUsername}
+                      placeholder="Username"
+                    />
+                    <TextInput
+                      style={[styles.input, { marginTop: 8 }]}
+                      value={email}
+                      onChangeText={setEmail}
+                      placeholder="E-mail"
+                    />
+                    <TextInput
+                      style={[styles.input, { marginTop: 8 }]}
+                      value={telefone}
+                      onChangeText={setTelefone}
+                      placeholder="Telefone"
+                    />
                     <View style={[styles.cepRow, { marginTop: 8 }]}>
-                      <TextInput style={[styles.input, { flex: 1 }]} value={cep} onChangeText={lidarBuscaCep} placeholder="CEP" maxLength={8} />
+                      <TextInput
+                        style={[styles.input, { flex: 1 }]}
+                        value={cep}
+                        onChangeText={lidarBuscaCep}
+                        placeholder="CEP"
+                        maxLength={8}
+                      />
                     </View>
-                    <TextInput style={styles.inputDisabled} editable={false} value={cidade ? `${cidade} - ${estado}` : ''} placeholder="Preenchido pelo CEP" style={{ marginTop: 8 }} />
+                    <TextInput
+                      style={[styles.inputDisabled, { marginTop: 8 }]}
+                      editable={false}
+                      value={cidade ? `${cidade} - ${estado}` : ''}
+                      placeholder="Preenchido pelo CEP"
+                    />
                     <View style={{ flexDirection: 'row', gap: 10, marginTop: 15 }}>
                       <TouchableOpacity style={styles.btnCancelarForm} onPress={() => setEditando(false)}><Text style={styles.btnCancelarFormText}>Cancelar</Text></TouchableOpacity>
                       <TouchableOpacity style={styles.btnSalvarForm} onPress={() => setEditando(false)}><Text style={styles.btnSalvarFormText}>Salvar</Text></TouchableOpacity>
