@@ -8,12 +8,11 @@ export default function TabLayout() {
 
   return (
     <View style={{ flex: 1, backgroundColor: '#FEFDF9' }}>
-      {/* topo fixo com barra reta, fina e logo bem visivel */}
+      {/* SEU TOPO OFICIAL RESTAURADO */}
       <SafeAreaView style={styles.header}>
         <View style={styles.headerContent}>
-          
-          {/* area da logo ajustada */}
           <View style={styles.logoRow}>
+            {/* Mantendo o caminho da imagem do seu projeto */}
             <Image 
               source={require('../../assets/logo-adotei.png')} 
               style={styles.logoImage} 
@@ -21,7 +20,6 @@ export default function TabLayout() {
             />
           </View>
           
-          {/* botoes de entrar e cadastrar */}
           <View style={styles.authButtons}>
             <TouchableOpacity onPress={() => router.push('/login')}>
               <Text style={styles.authText}>entrar</Text>
@@ -34,7 +32,7 @@ export default function TabLayout() {
         </View>
       </SafeAreaView>
 
-      {/* menu de abas inferior */}
+      {/* SUAS ABAS ORIGINAIS RESTAURADAS */}
       <Tabs
         screenOptions={{
           headerShown: false,
@@ -95,17 +93,17 @@ export default function TabLayout() {
         />
 
         <Tabs.Screen
-          name="tutorial"
+          name="perfil"
           options={{
-            title: 'Tutorial',
+            title: 'Perfil',
             tabBarIcon: ({ color, focused }) => (
-              <Ionicons name={focused ? "play-circle" : "play-circle-outline"} size={20} color={color} />
+              <Ionicons name={focused ? "person" : "person-outline"} size={20} color={color} />
             ),
           }}
         />
 
         <Tabs.Screen
-          name="perfil"
+          name="tutorial"
           options={{ href: null }}
         />
       </Tabs>
@@ -115,9 +113,9 @@ export default function TabLayout() {
 
 const styles = StyleSheet.create({
   header: { 
-    backgroundColor: '#8DC4A6', // verde menta original
+    backgroundColor: '#8DC4A6', 
     paddingTop: 40, 
-    paddingBottom: 10, // deixei mais fina
+    paddingBottom: 10,
   },
   headerContent: { 
     flexDirection: 'row', 
@@ -126,13 +124,10 @@ const styles = StyleSheet.create({
     alignItems: 'center' 
   },
   logoRow: { flexDirection: 'row', alignItems: 'center' },
-  
-  // tamanho focado apenas na logo, sem esticar a barra verde
   logoImage: { 
     width: 150, 
     height: 45,
   },
-  
   authButtons: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   authText: { color: '#FFF', fontWeight: '500', fontSize: 14 },
   dividerSign: { color: '#FFF', fontSize: 13, opacity: 0.7 },
