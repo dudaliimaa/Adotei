@@ -1,143 +1,120 @@
-import React from 'react';
 import { Tabs, useRouter } from 'expo-router';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+// Importações essenciais para o cabeçalho e layout funcionar
+import { View, Text, StyleSheet, TouchableOpacity, Image, SafeAreaView } from 'react-native';
 
 export default function TabLayout() {
   const router = useRouter();
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#FEFDF9' }}>
-      {/* SEU TOPO OFICIAL RESTAURADO */}
-      <SafeAreaView style={styles.header}>
-        <View style={styles.headerContent}>
-          <View style={styles.logoRow}>
-            {/* Mantendo o caminho da imagem do seu projeto */}
-            <Image 
-              source={require('../../assets/logo-adotei.png')} 
-              style={styles.logoImage} 
-              resizeMode="contain"
-            />
-          </View>
-          
-          <View style={styles.authButtons}>
-            <TouchableOpacity onPress={() => router.push('/login')}>
-              <Text style={styles.authText}>entrar</Text>
-            </TouchableOpacity>
-            <Text style={styles.dividerSign}>|</Text>
-            <TouchableOpacity onPress={() => router.push('/register')}>
-              <Text style={styles.authText}>cadastrar</Text>
-            </TouchableOpacity>
-          </View>
+    <SafeAreaView style={styles.container}>
+      
+      {/* SEU CABEÇALHO VERDE (DE VOLTA!) */}
+      <View style={styles.headerVerde}>
+        <View style={styles.logoGroup}>
+          <Image 
+            source={require('../../assets/logo-adotei.png')} 
+            style={styles.logoImage} 
+            resizeMode="contain"
+          />
         </View>
-      </SafeAreaView>
 
-      {/* SUAS ABAS ORIGINAIS RESTAURADAS */}
+        <View style={styles.linksGroup}>
+          {/* Usamos o caminho absoluto /(auth)/ para não ter erro de rota */}
+          <TouchableOpacity style={{ padding: 10 }} onPress={() => router.push('/(auth)/login')}>
+            <Text style={styles.linkTextInline}>entrar</Text>
+          </TouchableOpacity>
+          
+          <Text style={styles.divisorText}>|</Text>
+          
+          <TouchableOpacity style={{ padding: 10 }} onPress={() => router.push('/(auth)/register')}>
+            <Text style={styles.linkTextInline}>cadastrar</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* CONFIGURAÇÃO DAS ABAS COM ÍCONES */}
       <Tabs
         screenOptions={{
           headerShown: false,
-          tabBarStyle: styles.tabBar,
           tabBarActiveTintColor: '#8DC4A6',
-          tabBarInactiveTintColor: '#718096',
-          tabBarLabelStyle: { fontSize: 10, fontWeight: '500', marginTop: 2 }
+          tabBarInactiveTintColor: '#A0AEC0',
+          tabBarStyle: {
+            backgroundColor: '#FFF',
+            height: 60,
+            borderTopWidth: 1,
+            borderTopColor: '#E2E8F0',
+          },
         }}
       >
-        <Tabs.Screen
-          name="index"
-          options={{
-            title: 'Home',
-            tabBarIcon: ({ color, focused }) => (
-              <Ionicons name={focused ? "home" : "home-outline"} size={20} color={color} />
-            ),
-          }}
+        <Tabs.Screen 
+          name="index" 
+          options={{ 
+            title: 'Home', 
+            tabBarIcon: ({ color, size }) => <Ionicons name="home" size={size} color={color} /> 
+          }} 
         />
-
-        <Tabs.Screen
-          name="adotar"
-          options={{
-            title: 'Adotar',
-            tabBarIcon: ({ color, focused }) => (
-              <Ionicons name={focused ? "search" : "search-outline"} size={20} color={color} />
-            ),
-          }}
+        <Tabs.Screen 
+          name="adotar" 
+          options={{ 
+            title: 'Adotar', 
+            tabBarIcon: ({ color, size }) => <Ionicons name="paw" size={size} color={color} /> 
+          }} 
         />
-
-        <Tabs.Screen
-          name="doar"
-          options={{
-            title: 'Doar',
-            tabBarIcon: ({ color, focused }) => (
-              <Ionicons name={focused ? "paw" : "paw-outline"} size={20} color={color} />
-            ),
-          }}
+        <Tabs.Screen 
+          name="doar" 
+          options={{ 
+            title: 'Doar', 
+            tabBarIcon: ({ color, size }) => <Ionicons name="heart" size={size} color={color} /> 
+          }} 
         />
-
-        <Tabs.Screen
-          name="ongs"
-          options={{
-            title: 'ONGs',
-            tabBarIcon: ({ color, focused }) => (
-              <Ionicons name={focused ? "business" : "business-outline"} size={20} color={color} />
-            ),
-          }}
+        <Tabs.Screen 
+          name="ongs" 
+          options={{ 
+            title: 'ONGs', 
+            tabBarIcon: ({ color, size }) => <Ionicons name="business" size={size} color={color} /> 
+          }} 
         />
-
-        <Tabs.Screen
-          name="quem-somos"
-          options={{
-            title: 'Quem Somos',
-            tabBarIcon: ({ color, focused }) => (
-              <Ionicons name={focused ? "information-circle" : "information-circle-outline"} size={20} color={color} />
-            ),
-          }}
+        <Tabs.Screen 
+          name="tutorial" 
+          options={{ 
+            title: 'Tutorial', 
+            tabBarIcon: ({ color, size }) => <Ionicons name="information-circle" size={size} color={color} /> 
+          }} 
         />
-
-        <Tabs.Screen
-          name="perfil"
-          options={{
-            title: 'Perfil',
-            tabBarIcon: ({ color, focused }) => (
-              <Ionicons name={focused ? "person" : "person-outline"} size={20} color={color} />
-            ),
-          }}
+        <Tabs.Screen 
+          name="quem-somos" 
+          options={{ 
+            title: 'Quem Somos', 
+            tabBarIcon: ({ color, size }) => <Ionicons name="people" size={size} color={color} /> 
+          }} 
         />
-
-        <Tabs.Screen
-          name="tutorial"
-          options={{ href: null }}
+        <Tabs.Screen 
+          name="perfil" 
+          options={{ 
+            title: 'Perfil', 
+            tabBarIcon: ({ color, size }) => <Ionicons name="person" size={size} color={color} /> 
+          }} 
         />
       </Tabs>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  header: { 
+  container: { flex: 1, backgroundColor: '#FEFDF9' },
+  headerVerde: { 
     backgroundColor: '#8DC4A6', 
-    paddingTop: 40, 
-    paddingBottom: 10,
-  },
-  headerContent: { 
     flexDirection: 'row', 
     justifyContent: 'space-between', 
-    paddingHorizontal: 15, 
-    alignItems: 'center' 
+    alignItems: 'center', 
+    paddingHorizontal: 20, 
+    height: 90, // Aumentei um pouco para caber melhor a logo
+    paddingTop: 10
   },
-  logoRow: { flexDirection: 'row', alignItems: 'center' },
-  logoImage: { 
-    width: 150, 
-    height: 45,
-  },
-  authButtons: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  authText: { color: '#FFF', fontWeight: '500', fontSize: 14 },
-  dividerSign: { color: '#FFF', fontSize: 13, opacity: 0.7 },
-  
-  tabBar: { 
-    height: 75, 
-    backgroundColor: '#FFF', 
-    borderTopWidth: 1, 
-    borderTopColor: '#E2E8F0', 
-    paddingBottom: 12,
-    paddingTop: 8
-  }
+  logoGroup: { flexDirection: 'row', alignItems: 'center' },
+  logoImage: { width: 110, height: 50 },
+  linksGroup: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  linkTextInline: { color: '#FFF', fontSize: 16, fontWeight: 'bold', textTransform: 'lowercase' },
+  divisorText: { color: '#FFF', fontSize: 16, opacity: 0.9, fontWeight: 'bold' }
 });

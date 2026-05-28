@@ -10,12 +10,18 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 
+// FIREBASE ADICIONADO
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { auth } from '../../src/config/firebase';
+
 export default function LoginScreen() {
   const router = useRouter();
   const [emailOrCpf, setEmailOrCpf] = useState('');
   const [senha, setSenha] = useState('');
+  
+  // Estado para o seletor Tutor/ONG
+  const [tipoUsuario, setTipoUsuario] = useState('tutor');
 
-  // LÓGICA DO ESQUECEU A SENHA ATIVADA
   const handleEsqueceuSenha = () => {
     if (!emailOrCpf.trim()) {
       Alert.alert(
@@ -31,26 +37,49 @@ export default function LoginScreen() {
     );
   };
 
-  const handleEntrar = () => {
+  // FUNÇÃO DE LOGIN ATUALIZADA
+  const handleEntrar = async () => {
     if (!emailOrCpf.trim() || !senha.trim()) {
       Alert.alert('Erro', 'Por favor, preencha todos os campos para entrar.');
       return;
     }
     
-    Alert.alert('Sucesso', 'Login efetuado com sucesso!');
+    try {
+      // Tenta autenticar com Firebase Auth
+      await signInWithEmailAndPassword(auth, emailOrCpf.toLowerCase(), senha);
+      
+      // Se der certo, redireciona para a home
+      router.replace('/(tabs)');
+    } catch (error: any) {
+      Alert.alert('Erro de Login', 'E-mail ou senha inválidos.');
+    }
   };
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
       
-      {/* Textos principais sem o bloco de redes sociais */}
       <Text style={styles.title}>Entre com sua conta</Text>
       <Text style={styles.subtitle}>Conecte-se para gerenciar adoções e acompanhar atualizações!</Text>
 
-      {/* Inputs arredondados originais do design */}
+      {/* Seleção Tutor/ONG */}
+      <View style={styles.toggleContainer}>
+        <TouchableOpacity 
+          style={[styles.toggleButton, tipoUsuario === 'tutor' && styles.activeTutor]} 
+          onPress={() => setTipoUsuario('tutor')}
+        >
+          <Text style={tipoUsuario === 'tutor' ? styles.activeText : styles.inactiveText}>Tutor</Text>
+        </TouchableOpacity>
+        <TouchableOpacity 
+          style={[styles.toggleButton, tipoUsuario === 'ong' && styles.activeONG]} 
+          onPress={() => setTipoUsuario('ong')}
+        >
+          <Text style={tipoUsuario === 'ong' ? styles.activeText : styles.inactiveText}>ONG</Text>
+        </TouchableOpacity>
+      </View>
+
       <TextInput 
         style={styles.input} 
-        placeholder="E-mail / CPF / CNPJ" 
+        placeholder={tipoUsuario === 'tutor' ? "E-mail / CPF" : "E-mail / CNPJ"} 
         value={emailOrCpf}
         onChangeText={setEmailOrCpf}
         placeholderTextColor="#A0AEC0"
@@ -66,17 +95,14 @@ export default function LoginScreen() {
         placeholderTextColor="#A0AEC0"
       />
 
-      {/* Clique aqui funcional */}
       <TouchableOpacity style={styles.forgotLink} onPress={handleEsqueceuSenha}>
         <Text style={styles.forgotText}>Esqueceu a senha? Clique aqui</Text>
       </TouchableOpacity>
 
-      {/* Botão Verde Menta */}
       <TouchableOpacity style={styles.primaryButton} onPress={handleEntrar}>
         <Text style={styles.primaryButtonText}>Entrar</Text>
       </TouchableOpacity>
 
-      {/* Links de navegação inferiores discretos */}
       <View style={styles.signUpRow}>
         <Text style={styles.signUpText}>Não tem uma conta? </Text>
         <TouchableOpacity onPress={() => router.push('/register')}>
@@ -117,6 +143,13 @@ const styles = StyleSheet.create({
     lineHeight: 18,
     marginBottom: 35,
   },
+  // Estilos do Seletor
+  toggleContainer: { flexDirection: 'row', marginBottom: 16, borderRadius: 12, borderWidth: 1, borderColor: '#8DC4A6', overflow: 'hidden' },
+  toggleButton: { flex: 1, paddingVertical: 12, alignItems: 'center', backgroundColor: '#FFF' },
+  activeTutor: { backgroundColor: '#8DC4A6' },
+  activeONG: { backgroundColor: '#8DC4A6' },
+  activeText: { color: '#FFF', fontWeight: 'bold' },
+  inactiveText: { color: '#8DC4A6', fontWeight: 'bold' },
   input: {
     borderWidth: 1,
     borderColor: '#CBD5E0',
